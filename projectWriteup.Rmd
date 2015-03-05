@@ -38,7 +38,7 @@ In this step, I eliminated variables that have more than 97.5% of NA values. Ple
 
 ```{r, echo=TRUE}
 col <- colSums(is.na(trainingSub))/nrow(trainingSub)<=0.975
-trainingSubNew <- traningSub[,col]
+trainingSubNew <- trainingSub[,col]
 trainingSubNew2<-trainingSubNew[,-c(1:7)]
 ```
 

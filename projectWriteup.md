@@ -42,14 +42,7 @@ In this step, I eliminated variables that have more than 97.5% of NA values. Ple
 
 ```r
 col <- colSums(is.na(trainingSub))/nrow(trainingSub)<=0.975
-trainingSubNew <- traningSub[,col]
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'traningSub' not found
-```
-
-```r
+trainingSubNew <- trainingSub[,col]
 trainingSubNew2<-trainingSubNew[,-c(1:7)]
 ```
 
@@ -73,14 +66,14 @@ modFit
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 7
 ## 
-##         OOB estimate of  error rate: 0.46%
+##         OOB estimate of  error rate: 0.42%
 ## Confusion matrix:
-##      A    B    C    D    E class.error
-## A 4180    5    0    0    0 0.001194743
-## B   16 2825    7    0    0 0.008075843
-## C    0    9 2558    0    0 0.003506038
-## D    0    0   24 2387    1 0.010364842
-## E    0    0    1    5 2700 0.002217295
+##      A    B    C    D    E  class.error
+## A 4181    3    0    0    1 0.0009557945
+## B   11 2831    6    0    0 0.0059691011
+## C    0   11 2556    0    0 0.0042851578
+## D    0    0   22 2387    3 0.0103648425
+## E    0    0    2    3 2701 0.0018477458
 ```
 
 ```r
@@ -108,31 +101,31 @@ confusionMatrix(validationNew2$classe,predict(modFit, validationNew2) )
 ## Prediction    A    B    C    D    E
 ##          A 1395    0    0    0    0
 ##          B    2  946    1    0    0
-##          C    0    0  855    0    0
-##          D    0    0    1  803    0
-##          E    0    0    0    0  901
+##          C    0    7  848    0    0
+##          D    0    0    7  796    1
+##          E    0    0    4    1  896
 ## 
 ## Overall Statistics
-##                                           
-##                Accuracy : 0.9992          
-##                  95% CI : (0.9979, 0.9998)
-##     No Information Rate : 0.2849          
-##     P-Value [Acc > NIR] : < 2.2e-16       
-##                                           
-##                   Kappa : 0.999           
-##  Mcnemar's Test P-Value : NA              
+##                                         
+##                Accuracy : 0.9953        
+##                  95% CI : (0.993, 0.997)
+##     No Information Rate : 0.2849        
+##     P-Value [Acc > NIR] : < 2.2e-16     
+##                                         
+##                   Kappa : 0.9941        
+##  Mcnemar's Test P-Value : NA            
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9986   1.0000   0.9977   1.0000   1.0000
-## Specificity            1.0000   0.9992   1.0000   0.9998   1.0000
-## Pos Pred Value         1.0000   0.9968   1.0000   0.9988   1.0000
-## Neg Pred Value         0.9994   1.0000   0.9995   1.0000   1.0000
-## Prevalence             0.2849   0.1929   0.1748   0.1637   0.1837
-## Detection Rate         0.2845   0.1929   0.1743   0.1637   0.1837
+## Sensitivity            0.9986   0.9927   0.9860   0.9987   0.9989
+## Specificity            1.0000   0.9992   0.9983   0.9981   0.9988
+## Pos Pred Value         1.0000   0.9968   0.9918   0.9900   0.9945
+## Neg Pred Value         0.9994   0.9982   0.9970   0.9998   0.9998
+## Prevalence             0.2849   0.1943   0.1754   0.1625   0.1829
+## Detection Rate         0.2845   0.1929   0.1729   0.1623   0.1827
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
-## Balanced Accuracy      0.9993   0.9996   0.9988   0.9999   1.0000
+## Balanced Accuracy      0.9993   0.9959   0.9922   0.9984   0.9988
 ```
 
 The accuracy rate for my validation dataset is about 99.6%.
