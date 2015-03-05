@@ -1,7 +1,8 @@
 ### Project: The prediction of exercise quality: how well did you exercise? 
+### Catherine Li
 
 ### Overview
-In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. My primary goal is to predict their exercise quality, a categorical variable named "class" in the dataset.
+In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. My primary goal is to predict their exercise quality, a categorical variable named "classe" in the dataset.
 
 ### Data Analysis
 
@@ -18,22 +19,6 @@ testing<-read.csv("pml-testing.csv", header=TRUE,sep=",", na.strings=c("", "NA",
 
 ```r
 library(caret)
-```
-
-```
-## Warning: package 'caret' was built under R version 3.1.2
-```
-
-```
-## Loading required package: lattice
-## Loading required package: ggplot2
-```
-
-```
-## Warning: package 'ggplot2' was built under R version 3.1.2
-```
-
-```r
 inTrain<-createDataPartition(y=training$class, p=0.75,list=FALSE)
 trainingSub<-training[inTrain,]
 validation<-training[-inTrain,]
@@ -49,74 +34,71 @@ dumbbellVarN<-sum(grepl("_dumbbell", names(trainingSub)))
 featureVarN<-sum(beltVarN, armVarN, forearmVarN, dumbbellVarN)
 ```
 
-There are 160 variables in total. Among those, 152 variabls are feature variables: 38 variables are arm-relevant variables; 38 are belt-relevant variables; 38 are forarm-relevant variables; and 38 are dumbbell-relevant variables. The remaining 8 variables include our outcome "class" variable, the variable that we plan to predict, and the other 7 identification variables such as X (sequence), user_name (a participant's name), and five time variables. I intend to use feature variables to predict outcome variable in this project. 
+There are 160 variables in total. Among those, 152 variabls are feature variables: 38 variables are arm-relevant variables; 38 are belt-relevant variables; 38 are forarm-relevant variables; and 38 are dumbbell-relevant variables. The remaining 8 variables include our outcome "class" variable, the variable that we plan to predict, and the other 7 identification variables such as X (sequence), user_name (a participant's name), and five time variables. I intend to use feature variables only to predict outcome variable in this project. 
 
 #### Step 4. clean up the trainingSub dataset.
 In this step, I eliminated variables that have more than 97.5% of NA values. Please note 97.5% is subjective as I do not want to throw away a lot of data.  
 
 
 ```r
-numberNA = NULL
-for (i in 1:160) {
-        numberNA[i]<-sum(is.na(trainingSub[,i]))
-        numberNA
-}
-df<-data.frame(numberNA)
-df$col<-rownames(df)
-selVar<-df[df$numberNA<dim(trainingSub)[1]*0.975, ]
-trainingSubNew<-trainingSub[,as.numeric(selVar$col)]
-```
-
-I started with 160 variables in total for my trainingSub dataset. After running the above procedure, I ended up with 60 variables now. Among these, only 52 of them are feature variables. 
-
-#### Step 5. Fit the model on the trainingSub set. 
-
-
-```r
-modFit<-train(trainingSubNew$class~., method="rpart", data=trainingSubNew)
+col <- colSums(is.na(trainingSub))/nrow(trainingSub)<=0.975
+trainingSubNew <- traningSub[,col]
 ```
 
 ```
-## Loading required package: rpart
+## Error in eval(expr, envir, enclos): object 'traningSub' not found
 ```
 
 ```r
-library(rattle)
+trainingSubNew2<-trainingSubNew[,-c(1:7)]
+```
+
+I started with 160 variables in total for my trainingSub dataset. After running the above procedure, I ended up with 53 variables: 52 of them are feature variables, and "classe" is the outcome variable. The latest dataset name is labeled "trainingSubNew2".
+
+#### Step 5. Fit the model on the trainingSubNew2 dataset. 
+
+
+```r
+set.seed(1)
+library(randomForest)
+modFit<-randomForest(classe~., data=trainingSubNew2)
+modFit
 ```
 
 ```
-## Warning: package 'rattle' was built under R version 3.1.2
-```
-
-```
-## Rattle: A free graphical interface for data mining with R.
-## Version 3.4.1 Copyright (c) 2006-2014 Togaware Pty Ltd.
-## Type 'rattle()' to shake, rattle, and roll your data.
+## 
+## Call:
+##  randomForest(formula = classe ~ ., data = trainingSubNew2) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 7
+## 
+##         OOB estimate of  error rate: 0.46%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 4180    5    0    0    0 0.001194743
+## B   16 2825    7    0    0 0.008075843
+## C    0    9 2558    0    0 0.003506038
+## D    0    0   24 2387    1 0.010364842
+## E    0    0    1    5 2700 0.002217295
 ```
 
 ```r
-fancyRpartPlot(modFit$finalModel)
+plot(modFit, log="y", main="OOB and Label Prediction Error of the Random Forest Model")
+legend("topright", colnames(modFit$err.rate), fill=1:6)
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
 
-I used tree method to predict the outcome "class" variable, because the "class"" variable is categorical and have 5 levels. Hence, I prefer the tree method over logistic regression.  
-
+I used random forest method to predict the outcome "class" variable due to its high accuracy. It turns out the accuracy rate is indeed very high  
 
 #### Step 6. Use the validation dataset to evaluate the model fit
 
 
 ```r
-numberNA2 = NULL
-for (i in 1:160) {
-        numberNA2[i]<-sum(is.na(validation[,i]))
-        numberNA2
-}
-df2<-data.frame(numberNA2)
-df2$col<-rownames(df2)
-selVar2<-df2[df2$numberNA2<dim(validation)[1]*0.975, ]
-validationNew<-validation[,as.numeric(selVar2$col)]
-confusionMatrix(validationNew$class,predict(modFit, validationNew) )
+validationNew <- validation[, col]
+validationNew2<-validationNew[,-c(1:7)]
+confusionMatrix(validationNew2$classe,predict(modFit, validationNew2) )
 ```
 
 ```
@@ -125,31 +107,49 @@ confusionMatrix(validationNew$class,predict(modFit, validationNew) )
 ##           Reference
 ## Prediction    A    B    C    D    E
 ##          A 1395    0    0    0    0
-##          B    0  949    0    0    0
-##          C    0    1    0    0  854
-##          D    0    0    0    0  804
+##          B    2  946    1    0    0
+##          C    0    0  855    0    0
+##          D    0    0    1  803    0
 ##          E    0    0    0    0  901
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.6617          
-##                  95% CI : (0.6483, 0.6749)
-##     No Information Rate : 0.5218          
+##                Accuracy : 0.9992          
+##                  95% CI : (0.9979, 0.9998)
+##     No Information Rate : 0.2849          
 ##     P-Value [Acc > NIR] : < 2.2e-16       
 ##                                           
-##                   Kappa : 0.5694          
+##                   Kappa : 0.999           
 ##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9989       NA       NA   0.3521
-## Specificity            1.0000   1.0000   0.8257   0.8361   1.0000
-## Pos Pred Value         1.0000   1.0000       NA       NA   1.0000
-## Neg Pred Value         1.0000   0.9997       NA       NA   0.5858
-## Prevalence             0.2845   0.1937   0.0000   0.0000   0.5218
-## Detection Rate         0.2845   0.1935   0.0000   0.0000   0.1837
+## Sensitivity            0.9986   1.0000   0.9977   1.0000   1.0000
+## Specificity            1.0000   0.9992   1.0000   0.9998   1.0000
+## Pos Pred Value         1.0000   0.9968   1.0000   0.9988   1.0000
+## Neg Pred Value         0.9994   1.0000   0.9995   1.0000   1.0000
+## Prevalence             0.2849   0.1929   0.1748   0.1637   0.1837
+## Detection Rate         0.2845   0.1929   0.1743   0.1637   0.1837
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
-## Balanced Accuracy      1.0000   0.9995       NA       NA   0.6760
+## Balanced Accuracy      0.9993   0.9996   0.9988   0.9999   1.0000
 ```
-The accuracy rate for my validation dataset is about 66%. 
+
+The accuracy rate for my validation dataset is about 99.6%.
+
+#### Step 7. Use the testing dataset to predict the classe value.
+
+```r
+testingNew<-testing[,col]
+testingNew2<-testingNew[,-c(1:7)]
+answers<-predict(modFit, testingNew2[-53])
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(answers)
+```
+

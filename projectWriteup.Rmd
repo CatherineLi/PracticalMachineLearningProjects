@@ -1,7 +1,8 @@
 ### Project: The prediction of exercise quality: how well did you exercise? 
+### Catherine Li
 
 ### Overview
-In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. My primary goal is to predict their exercise quality, a categorical variable named "class" in the dataset.
+In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. My primary goal is to predict their exercise quality, a categorical variable named "classe" in the dataset.
 
 ### Data Analysis
 
@@ -30,49 +31,55 @@ dumbbellVarN<-sum(grepl("_dumbbell", names(trainingSub)))
 featureVarN<-sum(beltVarN, armVarN, forearmVarN, dumbbellVarN)
 ```
 
-There are 160 variables in total. Among those, 152 variabls are feature variables: 38 variables are arm-relevant variables; 38 are belt-relevant variables; 38 are forarm-relevant variables; and 38 are dumbbell-relevant variables. The remaining 8 variables include our outcome "class" variable, the variable that we plan to predict, and the other 7 identification variables such as X (sequence), user_name (a participant's name), and five time variables. I intend to use feature variables to predict outcome variable in this project. 
+There are 160 variables in total. Among those, 152 variabls are feature variables: 38 variables are arm-relevant variables; 38 are belt-relevant variables; 38 are forarm-relevant variables; and 38 are dumbbell-relevant variables. The remaining 8 variables include our outcome "class" variable, the variable that we plan to predict, and the other 7 identification variables such as X (sequence), user_name (a participant's name), and five time variables. I intend to use feature variables only to predict outcome variable in this project. 
 
 #### Step 4. clean up the trainingSub dataset.
 In this step, I eliminated variables that have more than 97.5% of NA values. Please note 97.5% is subjective as I do not want to throw away a lot of data.  
 
 ```{r, echo=TRUE}
-numberNA = NULL
-for (i in 1:160) {
-        numberNA[i]<-sum(is.na(trainingSub[,i]))
-        numberNA
-}
-df<-data.frame(numberNA)
-df$col<-rownames(df)
-selVar<-df[df$numberNA<dim(trainingSub)[1]*0.975, ]
-trainingSubNew<-trainingSub[,as.numeric(selVar$col)]
+col <- colSums(is.na(trainingSub))/nrow(trainingSub)<=0.975
+trainingSubNew <- traningSub[,col]
+trainingSubNew2<-trainingSubNew[,-c(1:7)]
 ```
 
-I started with 160 variables in total for my trainingSub dataset. After running the above procedure, I ended up with 60 variables now. Among these, only 52 of them are feature variables. 
+I started with 160 variables in total for my trainingSub dataset. After running the above procedure, I ended up with 53 variables: 52 of them are feature variables, and "classe" is the outcome variable. The latest dataset name is labeled "trainingSubNew2".
 
-#### Step 5. Fit the model on the trainingSub set. 
+#### Step 5. Fit the model on the trainingSubNew2 dataset. 
 
 ```{r, echo=TRUE}
-modFit<-train(trainingSubNew$class~., method="rpart", data=trainingSubNew)
-library(rattle)
-fancyRpartPlot(modFit$finalModel)
+set.seed(1)
+library(randomForest)
+modFit<-randomForest(classe~., data=trainingSubNew2)
+modFit
+plot(modFit, log="y", main="OOB and Label Prediction Error of the Random Forest Model")
+legend("topright", colnames(modFit$err.rate), fill=1:6)
+
 ```
 
-I used tree method to predict the outcome "class" variable, because the "class"" variable is categorical and have 5 levels. Hence, I prefer the tree method over logistic regression.  
-
+I used random forest method to predict the outcome "class" variable due to its high accuracy. It turns out the accuracy rate is indeed very high  
 
 #### Step 6. Use the validation dataset to evaluate the model fit
 
 ```{r, echo=TRUE}
-numberNA2 = NULL
-for (i in 1:160) {
-        numberNA2[i]<-sum(is.na(validation[,i]))
-        numberNA2
-}
-df2<-data.frame(numberNA2)
-df2$col<-rownames(df2)
-selVar2<-df2[df2$numberNA2<dim(validation)[1]*0.975, ]
-validationNew<-validation[,as.numeric(selVar2$col)]
-confusionMatrix(validationNew$class,predict(modFit, validationNew) )
+validationNew <- validation[, col]
+validationNew2<-validationNew[,-c(1:7)]
+confusionMatrix(validationNew2$classe,predict(modFit, validationNew2) )
 ```
 
-The accuracy rate for my validation dataset is about 66.15%. 
+The accuracy rate for my validation dataset is about 99.6%.
+
+#### Step 7. Use the testing dataset to predict the classe value.
+```{r, echo=TRUE}
+testingNew<-testing[,col]
+testingNew2<-testingNew[,-c(1:7)]
+answers<-predict(modFit, testingNew2[-53])
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(answers)
+```
+
